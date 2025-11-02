@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    </head>
+<body>
+    <Header>
+        <div class="Logo">
+            <a href ="{{ url_for('index') }}">
+                <h1>[College Blog]</h1>
+            </a>
+        </div>
+
+        <nav class="main-nav">
+            <input type="checkbox" id="nav-toggle" class="nav-toggle">
+
+            <label for="nav-toggle" class="nav-toggle-label">
+                <span class="Line"></span>
+                <span class="Line"></span>
+                <span class="Line"></span>
+            </label>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('about') }}">[About]</a></li>
+                <li><a href="{{ url_for('contact') }}">[Contact]</a></li>
+                <li><a href="{{ url_for('view_posts') }}">[View Posts]</a></li>
+                <li><a href="{{ url_for('create_post') }}">[Create a Post]</a></li>
+            </ul>
+        </nav>
+    </Header>
+
+    <main> 
+        <section class="welcome-section">
+            <h2>Welcome! Check out our latest Posts!</h2>
+
+            <div class="latest-posts-grid">
+            {% for post in latest_posts %}
+            <a href="{{ url_for('view_posts') }}" class="post-card">
+                <h3 class="card-title">{{ post.title }}</h3>
+                <p class="card-meta">By {{ post.author }} on {{ post.timestamp }}</p>
+                <p class="card-preview">{{ post.content | truncate(150, True, '...') }}</p>
+            </a>
+            {% else %}
+            <p>No posts available yet. Be the first to create one!</p>
+            {% endfor %}
+        </div>
+
+
+        </section>
+
+        <section class="write-endorsement">
+            <h2>Write Your Own Post!</h2>
+            <p>Feel free to share your own stories, ideas, and experiences with the college community by creating your own post.</p>
+        
+            <section class="Post-creation-link">
+            <a href="{{ url_for('create_post') }}">Create a Post</a>
+            </class>
+        </section>
+
+            <p>Or scroll through all the posts we have to offer!  </p>
+            <section class="Post-creation-link">
+            <a href="{{ url_for('view_posts') }}">View All Posts</a>
+            </class>
+        </section>
+
+        
+
+
+    </main>
+
+    <footer>
+        
+        <p>&copy; 2025 College Blog. All rights reserved.</p>
+        <p>If issues are found please visit contact page</p>
+    </footer>
+
+
+
+
+</html>

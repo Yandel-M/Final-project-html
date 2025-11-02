@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View All Posts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+</head>
+<body>
+    <Header>
+        <div class="Logo">
+            <a href ="{{ url_for('index') }}">
+                <h1>[College Blog]</h1>
+            </a>
+        </div>
+
+        <nav class="main-nav">
+            <input type="checkbox" id="nav-toggle" class="nav-toggle">
+
+            <label for="nav-toggle" class="nav-toggle-label">
+                <span class="Line"></span>
+                <span class="Line"></span>
+                <span class="Line"></span>
+            </label>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('about') }}">[About]</a></li>
+                <li><a href="{{ url_for('contact') }}">[Contact]</a></li>
+                <li><a href="{{ url_for('view_posts') }}">[View Posts]</a></li>
+                <li><a href="{{ url_for('create_post') }}">[Create a Post]</a></li>
+            </ul>
+        </nav>
+    </Header>
+    
+    <main> 
+
+        <section class="posts-header">
+            <h2>All Blog Posts</h2>
+            <p>Explore the latest posts shared by our community members below. Feel free to like and comment on the posts that resonate with you!</p>
+        <section class="posts-section container">
+        
+        <div id="posts-container">
+            
+            {% for post in posts %}
+            <article class="blog-post">
+                <h3 class="post-title">{{ post.title }}</h3>
+                <p class="post-meta">
+                    By **{{ post.author }}** on 
+                    <span class="post-timestamp">{{ post.timestamp }}</span>
+                </p>
+                <div class="post-content">
+                    <p>{{ post.content }}</p>
+                </div>
+
+                
+                <div class="interaction-bar">
+                    
+                    <form method="POST" action="{{ url_for('like_post', post_id=post.id) }}" class="like-form">
+                        {% set is_liked = post.id in session.get('liked_posts', []) %}
+                        <button type="submit" class="like-button">
+                            <span class="heart-icon {{ 'liked' if is_liked else '' }}">
+                                {% if is_liked %}
+                                    &#x2764; 
+                                {% else %}
+                                    &#x2661; 
+                                {% endif %}
+                            </span>
+                        </button>
+                        <span>{{ post.likes }} Likes</span>
+                    </form>
+
+              
+                    <button class="comment-button" onclick="toggleComments('{{ post.id }}')">
+                        Comments ({{ post.comments | length }})
+                    </button>
+                </div>
+      
+
+                
+                <div id="comments-{{ post.id }}" class="comments-section">
+                    <h4>Comments</h4>
+                    
+                  
+                    <div class="comments-list">
+                        {% for comment in post.comments %}
+                        <div class="comment">
+                            <p><strong>{{ comment.author }}</strong>: {{ comment.content }}</p>
+                            <span class="comment-meta">{{ comment.timestamp }}</span>
+                        </div>
+                        {% else %}
+                        <p>No comments yet. Be the first!</p>
+                        {% endfor %}
+                    </div>
+                    
+                  
+                    <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}" class="comment-form">
+                        <input type="text" name="author" placeholder="Your Name (Optional)" style="width: 100%; padding: 8px; margin-bottom: 10px;" />
+                        <textarea name="content" placeholder="Write your comment here..." required></textarea>
+                        <button type="submit">Submit Comment</button>
+                    </form>
+                </div>
+               
+
+            </article>
+            <p class="suggest-posts"> have something you want to share? <a href="{{ url_for('create_post') }}">create a post!</a></p>
+            {% endfor %}
+
+        </div>
+    </section>
+    </main>
+
+    <script>
+    function toggleComments(postId) {
+        
+        const commentsSection = document.getElementById(`comments-${postId}`);
+        
+        
+        if (commentsSection.style.display === 'none' || commentsSection.style.display === '') {
+            commentsSection.style.display = 'block';
+        } else {
+            commentsSection.style.display = 'none';
+        }
+    }
+    </script>
+
+    <footer> 
+        <p>&copy; 2025 College Blog. All rights reserved.</p>
+        <p>If issues are found please visit contact page</p>
+    </footer>
+</body>
+</html>

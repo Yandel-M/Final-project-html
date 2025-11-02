@@ -1,0 +1,322 @@
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    background-color: black; 
+    color: white; 
+    padding: 10px 20px;
+    transform: translateY(-70%);
+    
+    position: fixed;
+    width: 100%;
+    z-index: 1000; 
+    
+}
+
+.Logo a {
+    text-decoration: none;
+    color: white; 
+}
+
+.Logo h1 {
+    font-size: 2rem;
+    margin-left: 0; 
+    color: white; 
+}
+
+.main-nav {
+    position: relative; 
+    right: 50px;
+}
+
+
+/* Hide the checkbox */
+.main-nav input[type="checkbox"] {
+    display: none;
+}
+
+
+.nav-toggle-label {
+    display: block;
+    cursor: pointer;
+    padding: 10px;
+    z-index: 2; 
+}
+
+
+.Line {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: white; 
+    margin: 3px 0;
+    transition: all 0.3s ease;
+}
+
+.nav-toggle-label .Line:nth-child(3) {
+    opacity: 0;
+}
+
+.nav-toggle-label .Line:nth-child(2) {
+    transform: rotate(90deg) translate(-4px, 0px);
+}
+
+
+
+.nav-links {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    
+    position: absolute;
+    top: 100%;
+    right: 0; 
+    width: 200px;
+    background: black;
+    height: 0; 
+    overflow: hidden; 
+    transition: height 0.3s ease;
+}
+
+.nav-links li a { 
+    display: block;
+    padding: 10px 20px;
+    text-decoration: none;
+    color: white;
+    border-bottom: 1px solid #555;
+}
+
+
+.main-nav input[type="checkbox"]:checked ~ .nav-links {
+    height: 180px; 
+}
+
+
+
+
+.main-nav input[type="checkbox"]:checked + .nav-toggle-label .Line {
+    opacity: 1;
+    transform: none; 
+}
+
+.main-nav input[type="checkbox"]:checked + .nav-toggle-label .Line:nth-child(1),
+.main-nav input[type="checkbox"]:checked + .nav-toggle-label .Line:nth-child(3) {
+    opacity: 0;
+    transform: translateX(-10px); 
+}
+
+body {
+    margin: 0;
+    padding-top: 50px;
+    background-color: black; 
+    color: white; 
+}
+
+main {
+    padding-top: 5px;
+}
+
+.welcome-section {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.post-card {
+    display : inline-block;
+    text-align: left;
+    transform: translateX(50px);
+    margin: 20px auto;
+    color: white; 
+    border-bottom: white 2px solid;
+}
+
+.write-endorsement{
+    text-align: center;
+}
+
+.About-section {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.About-content {
+    text-align: center;
+}
+
+/*Contact Section*/
+.contact-section {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.contact-info {
+    text-align: center;
+}
+
+/*creating posts section*/
+.Post-Title, .Post-Author{
+    transform: translateX(1%);
+    padding-top: 60px;
+    margin-bottom: 20px;
+}
+
+.Post-Content {
+    transform: translateX(1%);
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.Post-textarea {
+    transform: translateX(15%);
+    background-color: #333; 
+    color: white;
+    border-color: #555; 
+}
+
+.Submit-Button {
+    margin-top: 5px;
+    padding-bottom: 30px;
+}
+
+/*Posts.html section*/
+
+.posts-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.posts-section {
+    display: inline-block;
+    text-align: Left;
+    margin-top: 50px; 
+}
+
+.suggest-posts {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 1.1em;
+}
+
+/* Styling for individual posts and its assets*/
+
+.blog-post {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.post-meta {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.interaction-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.like-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+
+}
+
+.like-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1.25rem; 
+    transition: transform 0.1s;
+
+    
+}
+
+.like-button:hover {
+    transform: scale(1.1);
+}
+
+.heart-icon {
+    color: #ccc;
+    font-size: 1.25rem;
+}
+
+.heart-icon.liked {
+    color: #ff4d4d; 
+}
+
+.comment-button {
+    align-items: center;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.comment-button:hover {
+    background-color: #0f1457;
+}
+
+/* Comments Section Styling */
+.comments-section {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #292828;
+    border-radius: 8px;
+    display: none; 
+}
+
+.comment {
+    border-bottom: 1px dashed #000000;
+    padding: 10px 0;
+}
+
+.comment-meta {
+    font-size: 0.8em;
+    color: #999;
+}
+
+.comment-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #000000;
+    border-radius: 5px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.comment-form button {
+    display: block;
+    width: 100%;
+    background-color: #4e5725;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.suggest-posts a {
+    color: yellow;
+    text-decoration: none;
+}
+
+/*universal footer*/
+footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+    text-align: center;
+    padding: 20px;
+    background-color: black; 
+    color: white; 
+}

@@ -1,0 +1,41 @@
+[
+    {
+        "id": 1,
+        "title": "Hello User!",
+        "author": "Yandel ",
+        "content": "Hello, welcome to the website! I hope you enjoy this website and what it has to offer.\r\nfind new people, connect, share with friends!\r\n\r\nHave a great day!",
+        "timestamp": "2025-11-01 at 02:40:33",
+        "likes": 1,
+        "comments": [
+            {
+                "author": "Anonymous",
+                "content": "Thanks I definitely will!",
+                "timestamp": "2025-11-01 at 03:05:32"
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "title": "CBU Robotics Robot Reveal",
+        "author": "Paxton Lavigne",
+        "content": "The CBU Robotics team is having their robot reveal event on November 22nd in the project hall of the engineering building on campus. You should come and see the robot as this will be the first time we show it off to the public and it will be awesome!",
+        "timestamp": "2025-11-01 at 11:13:07",
+        "likes": 1,
+        "comments": []
+    },
+    {
+        "id": 3,
+        "title": "Life at CBU!",
+        "author": "Jack",
+        "content": "This is my second year at CBU, and I love it here. I always feel like there is something to do on campus, whether with friends or solo, I never feel bored. Like the Halloween event the other day, it was really fun and cool to go, with music, game 6 of the World Series, and food. It was really enjoyable to go.",
+        "timestamp": "2025-11-01 at 11:25:54",
+        "likes": 0,
+        "comments": [
+            {
+                "author": "Yandel",
+                "content": "It's my second year too. CBU is never boring. If you're bored, all you need to do is look in the right places!",
+                "timestamp": "2025-11-01 at 11:27:25"
+            }
+        ]
+    }
+]

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    
+
+
+    </head>
+
+    <Header>
+        <div class="Logo">
+            <a href ="{{ url_for('index') }}">
+                <h1>[College Blog]</h1>
+            </a>
+        </div>
+
+        <nav class="main-nav">
+            <input type="checkbox" id="nav-toggle" class="nav-toggle">
+
+            <label for="nav-toggle" class="nav-toggle-label">
+                <span class="Line"></span>
+                <span class="Line"></span>
+                <span class="Line"></span>
+            </label>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('about') }}">[About]</a></li>
+                <li><a href="{{ url_for('contact') }}">[Contact]</a></li>
+                <li><a href="{{ url_for('view_posts') }}">[View Posts]</a></li>
+                <li><a href="{{ url_for('create_post') }}">[Create a Post]</a></li>
+            </ul>
+        </nav>
+    </Header>
+
+    <main> 
+        <div class="About-section">
+            <h2>About Us</h2>
+        </div>
+
+        <div class="About-content">
+            <p>College Blog is a platform dedicated to sharing posts and stories from those across colleges allowing for us to all be connected even in a small way</p>
+            <p>We allow our users to share their interests, stories, ideas, and more through our platform!</p>
+            <p>if there is any concerns or suggestions as to we have our contact information in the contact page</p>
+        </div>
+    </main>
+     <footer>
+        <p>&copy; 2025 College Blog. All rights reserved.</p>
+        <p>If issues are found please visit contact page</p>
+    </footer>
+</html>

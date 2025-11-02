@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <script src="script.js" defer></script>
+    </head>
+<body>
+    <Header>
+        <div class="Logo">
+            <a href ="{{ url_for('index') }}">
+                <h1>[College Blog]</h1>
+            </a>
+        </div>
+
+        <nav class="main-nav">
+            <input type="checkbox" id="nav-toggle" class="nav-toggle">
+
+            <label for="nav-toggle" class="nav-toggle-label">
+                <span class="Line"></span>
+                <span class="Line"></span>
+                <span class="Line"></span>
+            </label>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('about') }}">[About]</a></li>
+                <li><a href="{{ url_for('contact') }}">[Contact]</a></li>
+                <li><a href="{{ url_for('view_posts') }}">[View Posts]</a></li>
+                <li><a href="{{ url_for('create_post') }}">[Create a Post]</a></li>
+            </ul>
+        </nav>
+    </Header>
+<main>
+
+    <form method="POST" action="{{ url_for('create_post') }}">
+        <section class="Post-Title">
+            <Label for="post-title">Post Title:</Label>
+            <input type="text" id="post-title" name="post-title" required>
+        </section>
+
+        <section class="Post Author">
+            <Label for="post-author">Post Author:</Label>
+            <input type="text" id="post-author" name="post-author" required>
+        </section>
+
+        <section class="Post-Content">
+            <label for="post-content">Post Content:</label>
+        </section class ="Post-textarea">
+            <textarea id="post-content" name="post-content" rows="30" cols="100" required></textarea>
+        </section>
+
+        <section class="Submit-Button">
+            <button type="submit">Submit Post</button>
+        </section>
+    </form>
+</main>
+<footer>        
+    <p>&copy; 2025 College Blog. All rights reserved.</p>
+    <p>If issues are found please visit contact page</p>
+</footer>
+
+</html>

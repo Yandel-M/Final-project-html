@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="script.js" defer></script>
+
+    </head> 
+<Header>
+        <div class="Logo">
+            <a href ="{{ url_for('index') }}">
+                <h1>[College Blog]</h1>
+            </a>
+        </div>
+
+        <nav class="main-nav">
+            <input type="checkbox" id="nav-toggle" class="nav-toggle">
+
+            <label for="nav-toggle" class="nav-toggle-label">
+                <span class="Line"></span>
+                <span class="Line"></span>
+                <span class="Line"></span>
+            </label>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('about') }}">[About]</a></li>
+                <li><a href="{{ url_for('contact') }}">[Contact]</a></li>
+                <li><a href="{{ url_for('view_posts') }}">[View Posts]</a></li>
+                <li><a href="{{ url_for('create_post') }}">[Create a Post]</a></li>
+            </ul>
+        </nav>
+    </Header>
+
+<main> 
+    <section class="contact-section">
+        <h2>Contact Us</h2>
+    </section>
+
+    <section class ="contact-info">
+        <p>If you have any questions, suggestions, or concerns, feel free to reach out to us!</p>
+        <p>Email: Yandeladonay.marmol@calbaptist.edu</p>
+        <p>Instagram: Yanmardelmol</p>
+
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2025 College Blog. All rights reserved.</p>
+    <p>If issues are found please refer to what's above</p>
+</html>
