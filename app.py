@@ -148,6 +148,21 @@ def about():
 def contact():
     return render_template('contact.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == 'admin' and password == 'password':
+            session['logged_in'] = True
+            flash('Logged in successfully!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid credentials. Please try again.', 'error')
+    
+    return render_template('login.html')
+
 
 
 
