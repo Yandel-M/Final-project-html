@@ -7,14 +7,26 @@ import os
 
 app = Flask(__name__)
 
+
+
 app.secret_key = 'super_secret_blog_key_123' 
 
-
+Upload_folder = 'static/uploads'
+allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
 DATA_FILE = 'data.json'
+
+app.config['UPLOAD_FOLDER'] = Upload_folder
+
 blog_posts = []
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 def load_data():
     """Loads blog posts from the JSON file, handling empty/missing files."""
+
+    os.makedirs(app.config['Upload_folder'], exist_ok=True)
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
             try:
@@ -59,6 +71,28 @@ def create_post():
         title = request.form.get('post-title')
         author = request.form.get('post-author') or "Anonymous"
         content = request.form.get('post-content')
+        file = request.files.get('post-image')
+
+        image_url = None
+
+        if file and file.filename != '' and allowed_file(file.filename):
+
+            timestamp = int(time.time())
+
+            sanitized_name = secure_filename(file.filename)
+
+            unique_filename = f"{timestamp}_{sanitized_name}"
+
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+
+            try: 
+                file.save(file_path)
+
+                image_url = url_for('static', filename=f'uploads/{unique_filename}')
+                flash('Image uploaded successfully!', 'success')
+            except Exception as e:
+                flash(f'Error uploading image: {str(e)}', 'error')
+                image_url = None
         
 
         current_time = datetime.datetime.now().strftime("%Y-%m-%d at %H:%M:%S")
@@ -131,6 +165,39 @@ def add_comment(post_id):
         
     return redirect(url_for('view_posts'))
 
+@app.route('/upload', methods=['POST'])
+def upload_file():
+
+    if ''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/posts')
 def view_posts():
@@ -162,8 +229,6 @@ def login():
             flash('Invalid credentials. Please try again.', 'error')
     
     return render_template('login.html')
-
-
 
 
 if __name__ == '__main__':

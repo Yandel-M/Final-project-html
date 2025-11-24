@@ -54,6 +54,12 @@
         <section class="Submit-Button">
             <button type="submit">Submit Post</button>
         </section>
+
+        <form method="POST" action="/upload" enctype="multipart/form-data">
+            <label for="file">choose Image to Upload</label>
+            <input type="file" id="file" name="file" accept="image/*" required>
+            <button type="submit">Upload</button>
+        </form>
     </form>
 </main>
 <footer>        
