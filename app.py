@@ -167,37 +167,11 @@ def add_comment(post_id):
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-
-    if ''
-
+    
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#this is a laptop test comment remove later
+#this is another test line
 
 @app.route('/posts')
 def view_posts():
