@@ -1,6 +1,8 @@
 import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+from werkzeug.utils import secure_filename
 
+import time
 import json
 import os
 
@@ -26,7 +28,7 @@ def allowed_file(filename):
 def load_data():
     """Loads blog posts from the JSON file, handling empty/missing files."""
 
-    os.makedirs(app.config['Upload_folder'], exist_ok=True)
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
             try:
@@ -44,7 +46,12 @@ def save_data():
 
 blog_posts = load_data()
 
+def is_logged_in():
+    return session.get('logged_in', False)
 
+@app.context_processor
+def inject_globals():
+    return dict(is_logged_in=is_logged_in)
 
 
 @app.route('/')
@@ -76,16 +83,12 @@ def create_post():
         image_url = None
 
         if file and file.filename != '' and allowed_file(file.filename):
-
-            timestamp = int(time.time())
-
-            sanitized_name = secure_filename(file.filename)
-
-            unique_filename = f"{timestamp}_{sanitized_name}"
-
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-
-            try: 
+            try:
+                timestamp = int(time.time())
+                sanitized_name = secure_filename(file.filename)
+                unique_filename = f"{timestamp}-{sanitized_name}" 
+                
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
 
                 image_url = url_for('static', filename=f'uploads/{unique_filename}')
@@ -105,7 +108,8 @@ def create_post():
             'content': content,
             'timestamp': current_time,
             'likes': 0,           
-            'comments': []        
+            'comments': [],    
+            'image_url': image_url
         }
         
         
@@ -168,10 +172,62 @@ def add_comment(post_id):
 @app.route('/upload', methods=['POST'])
 def upload_file():
     
+    if 'file' not in request.files:
+        # Check if the file input name is 'files' or 'file'
+        if 'files' not in request.files:
+             flash('No file part in the request.', 'error')
+             return redirect(request.url)
+    
+    # FIX 3: Assuming the input name is 'file', but checking for 'files' as in original code
+    file = request.files.get('file') or request.files.get('files')
+
+    if not file or file.filename == '':
+        flash('No selected file.', 'error')
+        return redirect(request.url)
+    
+    if file and allowed_file(file.filename):
+
+        timestamp = int(time.time())
+        extension = file.filename.rsplit('.', 1)[1].lower()
+        unique_filename = secure_filename(f"{timestamp}.{extension}")
+
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+        file.save(file_path)
+
+        image_url = url_for('static', filename=f'uploads/{unique_filename}')
+
+        try:
+            with open(DATA_FILE, 'r') as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = []
 
 
-#this is a laptop test comment remove later
-#this is another test line
+        new_post = {
+            'id': len(blog_posts) + 1, 
+            'title': "Uploaded Image",
+            'author': "Anonymous",
+            'content': "Image uploaded via the file upload endpoint.",
+            'timestamp': datetime.datetime.now().strftime("%Y-%m-%d at %H:%M:%S"),
+            'likes': 0,
+            'comments': [],
+            'image_url': image_url
+        }
+
+        data.append(new_post)
+
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+        
+        flash('File uploaded and saved as a post!', 'success')
+        return redirect(url_for('index', success=True))
+    
+    flash('File upload failed or file type not allowed.', 'error')
+    return redirect(request.url)
+    
 
 @app.route('/posts')
 def view_posts():
@@ -206,4 +262,5 @@ def login():
 
 
 if __name__ == '__main__':
+    os.makedirs(Upload_folder, exist_ok=True)
     app.run(debug=True)
