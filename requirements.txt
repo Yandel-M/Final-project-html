@@ -1,0 +1,9 @@
+Flask
+Flask-Dance
+requests
+Werkzeug
+Jinja2
+itsdangerous
+MarkupSafe
+click
+gunicorn
