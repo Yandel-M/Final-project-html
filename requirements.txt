@@ -7,3 +7,4 @@ itsdangerous
 MarkupSafe
 click
 gunicorn
+firebase-admin

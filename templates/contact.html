@@ -1,51 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homepage</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="script.js" defer></script>
+{% extends "base.html" %}
 
-    </head> 
-<Header>
-        <div class="Logo">
-            <a href ="{{ url_for('index') }}">
-                <h1>[College Blog]</h1>
-            </a>
+{% block title %}Contact Us{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl">
+    <h2 class="text-4xl font-bold text-gray-800 mb-6 text-center">Get in Touch</h2>
+    <p class="text-gray-600 mb-6 text-center">
+        Have a question or feedback? Please reach out to us!
+    </p>
+    
+    <!-- This is a dummy form, as the backend logic to handle emails is not implemented -->
+    <form action="#" method="POST">
+        <div class="mb-4">
+            <label for="name" class="block text-gray-700 font-medium mb-2">Your Name</label>
+            <input type="text" id="name" name="name" required
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
-
-        <nav class="main-nav">
-            <input type="checkbox" id="nav-toggle" class="nav-toggle">
-
-            <label for="nav-toggle" class="nav-toggle-label">
-                <span class="Line"></span>
-                <span class="Line"></span>
-                <span class="Line"></span>
-            </label>
-            <ul class="nav-links">
-                <li><a href="{{ url_for('about') }}">[About]</a></li>
-                <li><a href="{{ url_for('contact') }}">[Contact]</a></li>
-                <li><a href="{{ url_for('view_posts') }}">[View Posts]</a></li>
-                <li><a href="{{ url_for('create_post') }}">[Create a Post]</a></li>
-            </ul>
-        </nav>
-    </Header>
-
-<main> 
-    <section class="contact-section">
-        <h2>Contact Us</h2>
-    </section>
-
-    <section class ="contact-info">
-        <p>If you have any questions, suggestions, or concerns, feel free to reach out to us!</p>
-        <p>Email: Yandeladonay.marmol@calbaptist.edu</p>
-        <p>Instagram: Yanmardelmol</p>
-
-    </section>
-</main>
-
-<footer>
-    <p>&copy; 2025 College Blog. All rights reserved.</p>
-    <p>If issues are found please refer to what's above</p>
-</html>
+        <div class="mb-4">
+            <label for="email" class="block text-gray-700 font-medium mb-2">Your Email</label>
+            <input type="email" id="email" name="email" required
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="mb-6">
+            <label for="message" class="block text-gray-700 font-medium mb-2">Message</label>
+            <textarea id="message" name="message" rows="5" required
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"></textarea>
+        </div>
+        <button type="submit" disabled
+                class="w-full bg-gray-400 text-white font-semibold py-3 rounded-xl shadow-lg cursor-not-allowed">
+            Send Message (Dummy: Not Implemented)
+        </button>
+    </form>
+</div>
+{% endblock %}

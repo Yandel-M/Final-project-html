@@ -1,330 +1,232 @@
-import datetime
 import os
-import json
+from flask import Flask, redirect, url_for, render_template, request, flash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 import time
+import json
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from werkzeug.utils import secure_filename
-from functools import wraps
+# --- Firestore and Firebase Setup ---
+from firebase_admin import credentials, initialize_app
+from firebase_admin import firestore
+import firebase_admin
 
-# --- Flask-Dance Imports for Google OAuth ---
-from flask_dance.contrib.google import make_google_blueprint, google
-from flask_dance.consumer.storage.session import SessionStorage
-# --------------------------------------------
+# --- Environment Configuration ---
+FLASK_SECRET_KEY_ENV = os.environ.get("FLASK_SECRET_KEY", "super_secret_blog_key_123")
+app_id = os.environ.get('__app_id', 'default-app-id')
+firebase_config_json = os.environ.get('__firebase_config', '{}')
 
-# --- Configuration ---
+# Collection path for users and posts
+USER_COLLECTION = f'artifacts/{app_id}/public/data/site_users'
+POST_COLLECTION = f'artifacts/{app_id}/public/data/blog_posts'
 
-# NOTE: Replace these placeholders with your actual Client ID and Secret
-# obtained from the Google Cloud Console.
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE"
-GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET_HERE"
-
-app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", 'super_secret_blog_key_123') 
-app.config["GOOGLE_OAUTH_CLIENT_ID"] = GOOGLE_CLIENT_ID
-app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = GOOGLE_CLIENT_SECRET
-
-
-Upload_folder = 'static/uploads'
-allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
-DATA_FILE = 'data.json'
-
-app.config['UPLOAD_FOLDER'] = Upload_folder
-
-blog_posts = []
-
-# --- Flask-Dance Blueprint Setup ---
-google_bp = make_google_blueprint(
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
-    scope=["profile", "email"],
-    # Redirect user to /posts after successful Google sign-in
-    redirect_url="/posts" 
-)
-app.register_blueprint(google_bp, url_prefix="/login")
-# ------------------------------------
-
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
-def load_data():
-    """Loads blog posts from the JSON file, handling empty/missing files."""
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            try:
-                return json.load(f)
-            except json.JSONDecodeError:
-                return []
-    return []
-
-def save_data():
-    """Saves blog posts to the JSON file."""
-    with open(DATA_FILE, 'w') as f:
-        json.dump(blog_posts, f, indent=4)
-
-
-blog_posts = load_data()
-
-
-# --- Custom User Management Helper ---
-
-def get_current_user_info():
-    """
-    Checks if a user is logged in via Google OAuth and fetches/caches their info.
-    Returns a dict with 'name' and 'email' or None.
-    """
-    # 1. Check for traditional simple login (if you keep it)
-    if session.get('logged_in'):
-        return {
-            'name': session.get('username', 'Admin'), 
-            'email': session.get('username', 'admin@local.com') # Using username for simulated email
-        }
-
-    # 2. Check for Google OAuth login
-    if google.authorized:
-        # Check session cache first
-        if 'google_user_email' in session:
-            return {
-                'email': session['google_user_email'],
-                'name': session.get('google_user_name', 'Google User')
+# --- Initial Seed Data (Generic College Content) ---
+INITIAL_POSTS_DATA = [
+    {
+        "id": 1,
+        "title": "Welcome to The College Blog!",
+        "author": "Yandel ",
+        "content": "Hello, welcome to the official college blog! I hope you enjoy this website and what it has to offer.\r\nFind new people, connect, share with friends!\r\n\r\nHave a great day!",
+        "timestamp": "2025-11-01 at 02:40:33",
+        "likes": 1,
+        "comments": [
+            {
+                "author": "Anonymous",
+                "content": "Thanks I definitely will!",
+                "timestamp": "2025-11-01 at 03:05:32"
             }
+        ]
+    },
+    {
+        "id": 2,
+        "title": "Robotics Club Fall Showcase",
+        "author": "Paxton Lavigne",
+        "content": "The Campus Robotics team is having their robot reveal event on November 22nd in the project hall of the engineering building on campus. You should come and see the robot as this will be the first time we show it off to the public and it will be awesome!",
+        "timestamp": "2025-11-01 at 11:13:07",
+        "likes": 1,
+        "comments": []
+    },
+    {
+        "id": 3,
+        "title": "Life at the University!",
+        "author": "Jack",
+        "content": "This is my second year at the university, and I love it here. I always feel like there is something to do on campus, whether with friends or solo, I never feel bored. Like the recent Fall Festival event, it was really fun and cool to go, with music, games, and food. It was really enjoyable to go.",
+        "timestamp": "2025-11-01 at 11:25:54",
+        "likes": 0,
+        "comments": [
+            {
+                "author": "Yandel",
+                "content": "It's my second year too. Campus is never boring. If you're bored, all you need to do is look in the right places!",
+                "timestamp": "2025-11-01 at 11:27:25"
+            }
+        ]
+    }
+]
 
-        # If authorized but no data, fetch from Google
-        try:
-            resp = google.get("/oauth2/v2/userinfo")
-            if resp.ok:
-                user_info = resp.json()
-                # Store essential info in the session
-                session['google_user_email'] = user_info['email']
-                session['google_user_name'] = user_info.get('name', user_info['email'])
-                return {
-                    'email': user_info['email'],
-                    'name': user_info.get('name', user_info['email'])
+def parse_custom_timestamp(ts_str):
+    """Converts the custom timestamp string into a standard UNIX timestamp (float)."""
+    try:
+        # Format: "YYYY-MM-DD at HH:MM:SS"
+        dt_obj = datetime.strptime(ts_str, "%Y-%m-%d at %H:%M:%S")
+        return dt_obj.timestamp()
+    except Exception:
+        # Fallback to current time if parsing fails
+        return time.time() 
+
+def seed_initial_data():
+    """Seeds the Firestore database with initial posts if the collection is empty."""
+    if not db:
+        return
+        
+    try:
+        posts_ref = db.collection(POST_COLLECTION)
+        
+        # Check if any documents exist (limit 1 for efficiency)
+        if not posts_ref.limit(1).get():
+            print("Seeding database with initial post data...")
+            for post_data in INITIAL_POSTS_DATA:
+                # Transform the data structure for Firestore
+                doc_data = {
+                    'title': post_data['title'],
+                    'content': post_data['content'],
+                    'author_username': post_data['author'], # Using 'author' from seed data
+                    'likes_count': post_data['likes'],
+                    'comments': post_data['comments'],
+                    'created_at': parse_custom_timestamp(post_data['timestamp']),
+                    'updated_at': parse_custom_timestamp(post_data['timestamp']),
+                    'author_id': 'seed_user_id', # Placeholder ID for seeded content
                 }
+                posts_ref.add(doc_data)
+            print("Database seeding complete.")
+        else:
+            print("Database already contains posts. Seeding skipped.")
             
-            # If the response failed, clear authorization flag
-            flash("Failed to retrieve profile data from Google.", "error")
-            session.pop("google_oauth_token", None)
-            return None
+    except Exception as e:
+        print(f"Error during database seeding: {e}")
 
+
+# --- Firebase Admin SDK Initialization (Server-side) ---
+try:
+    if not firebase_admin._apps:
+        firebase_config = json.loads(firebase_config_json)
+        cred_data = {
+            "type": "service_account",
+            "project_id": firebase_config.get("projectId"),
+            "private_key_id": os.environ.get("FIREBASE_PRIVATE_KEY_ID"),
+            "private_key": os.environ.get("FIREBASE_PRIVATE_KEY", "").replace('\\n', '\n'),
+            "client_email": os.environ.get("FIREBASE_CLIENT_EMAIL"),
+            "client_id": os.environ.get("FIREBASE_CLIENT_ID"),
+        }
+        
+        if all(cred_data.values()):
+            cred = credentials.Certificate(cred_data)
+            initialize_app(cred, {'projectId': firebase_config.get("projectId")})
+            db = firestore.client()
+            print("Firestore initialized successfully.")
+            # --- CALL SEEDING FUNCTION HERE ---
+            seed_initial_data()
+        else:
+            print("WARNING: Firestore initialization skipped due to missing credentials.")
+            db = None
+
+    else:
+        db = firestore.client()
+        
+except Exception as e:
+    print(f"FATAL: Firestore Initialization Failed: {e}")
+    db = None
+
+# --- Flask and Configuration (Rest of app.py is the same) ---
+app = Flask(__name__)
+app.secret_key = FLASK_SECRET_KEY_ENV
+app.config["PREFERRED_URL_SCHEME"] = "http" 
+
+# --- Flask-Login Setup (Same) ---
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message_category = 'warning'
+
+# Custom User Class for Flask-Login (Same)
+class User(UserMixin):
+    def __init__(self, user_id, username, email, role='standard'):
+        self.id = user_id
+        self.username = username
+        self.email = email
+        self.role = role
+
+    def is_admin(self):
+        return self.role == 'admin'
+
+    @staticmethod
+    def get_by_id(user_id):
+        if not db: return None
+        try:
+            doc_ref = db.collection(USER_COLLECTION).document(user_id).get()
+            if doc_ref.exists:
+                data = doc_ref.to_dict()
+                return User(user_id=user_id, username=data.get('username'), email=data.get('email'), role=data.get('role', 'standard'))
         except Exception as e:
-            # Handle potential connection issues
-            print(f"Error fetching Google user info: {e}")
+            print(f"Error fetching user {user_id}: {e}")
             return None
+        return None
 
-    return None
+    @staticmethod
+    def get_by_username(username):
+        if not db: return None, None
+        try:
+            users_ref = db.collection(USER_COLLECTION)
+            query = users_ref.where('username', '==', username).limit(1).get()
+            if query:
+                user_doc = query[0]
+                data = user_doc.to_dict()
+                return User(user_id=user_doc.id, username=data.get('username'), email=data.get('email'), role=data.get('role', 'standard')), data.get('password_hash')
+        except Exception as e:
+            print(f"Error querying user by username: {e}")
+            return None, None
+        return None, None
 
-def is_logged_in():
-    """Returns True if any user (simple or Google) is logged in."""
-    return get_current_user_info() is not None
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(user_id)
 
-# Add user info and login status to all templates
 @app.context_processor
-def inject_globals():
-    return dict(
-        is_logged_in=is_logged_in(),
-        current_user=get_current_user_info()
-    )
+def inject_user_status():
+    return dict(is_logged_in=current_user.is_authenticated, current_user=current_user)
 
-def login_required(f):
-    """Decorator to protect routes."""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not is_logged_in():
-            flash("You must be logged in to access this page.", "error")
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
-    return decorated_function
-
+# --- Routes (Same) ---
 
 @app.route('/')
 def index():
-    sorted_posts = sorted(blog_posts, 
-                          key=lambda x: datetime.datetime.strptime(x['timestamp'], "%Y-%m-%d at %H:%M:%S"), 
-                          reverse=True)
-                          
-    latest_posts = sorted_posts[:3]
-    
-    return render_template('homepage.html', latest_posts=latest_posts)
-
-@app.route('/create-posts', methods=['GET', 'POST'])
-@login_required # Protecting the post creation route
-def create_post():
-    """
-    Handles both rendering the creation form (GET) and processing post submission (POST).
-    Requires login.
-    """
-    current_user = get_current_user_info()
-    
-    if request.method == 'POST':
-        global blog_posts  
-
-        title = request.form.get('post-title')
-        # Use the logged-in user's name for the author
-        author = current_user.get('name', "Authenticated User")
-        content = request.form.get('post-content')
-        file = request.files.get('post-image')
-
-        image_url = None
-
-        if file and file.filename != '' and allowed_file(file.filename):
-            try:
-                timestamp = int(time.time())
-                sanitized_name = secure_filename(file.filename)
-                unique_filename = f"{timestamp}-{sanitized_name}" 
-                
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                file.save(file_path)
-
-                image_url = url_for('static', filename=f'uploads/{unique_filename}')
-                flash('Image uploaded successfully!', 'success')
-            except Exception as e:
-                flash(f'Error uploading image: {str(e)}', 'error')
-                image_url = None
+    # --- FETCH TOP 3 POSTS FOR HOMEPAGE ---
+    if not db:
+        flash('Cannot retrieve posts: Database connection failed.', 'danger')
+        return render_template('homepage.html', posts=[])
         
-
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d at %H:%M:%S")
-
-        new_post = {
-            'id': len(blog_posts) + 1, 
-            'title': title,
-            'author': author,
-            'content': content,
-            'timestamp': current_time,
-            'likes': 0,           
-            'comments': [],    
-            'image_url': image_url
-        }
+    posts = []
+    try:
+        posts_ref = db.collection(POST_COLLECTION)
+        # Fetch up to 10 posts to ensure we get 3 even if some data is bad, then sort in Python.
+        query_results = posts_ref.get() 
         
-        blog_posts.append(new_post)
-        save_data() 
-        
-        flash(f"Post '{title}' successfully created!", 'success')
-        return redirect(url_for('view_posts'))
-
-    return render_template('create-posts.html')
-
-
-@app.route('/like-post/<int:post_id>', methods=['POST'])
-def like_post(post_id):
-    """Handles incrementing/decrementing the like count for a post."""
-    
-    # Keeping this open to non-logged-in users for simplicity, but tracking state in session
-    liked_posts = session.get('liked_posts', [])
-    
-    post_to_update = next((post for post in blog_posts if post['id'] == post_id), None)
-
-    if post_to_update:
-        if post_id in liked_posts:
-            post_to_update['likes'] -= 1
-            liked_posts.remove(post_id)
-            flash('Post unliked.', 'info')
-        else:
-            post_to_update['likes'] += 1
-            liked_posts.append(post_id)
-            flash('Post liked!', 'success')
-        
-        session['liked_posts'] = liked_posts
-        save_data()
-        
-    return redirect(url_for('view_posts'))
-
-
-@app.route('/add-comment/<int:post_id>', methods=['POST'])
-def add_comment(post_id):
-    """Handles adding a new comment to a post."""
-    current_user = get_current_user_info()
-    
-    # Use authenticated user name, fallback to form data or Anonymous
-    comment_author = (current_user.get('name') if current_user else request.form.get('author')) or "Anonymous"
-    comment_content = request.form.get('content')
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d at %H:%M:%S")
-
-    post_to_update = next((post for post in blog_posts if post['id'] == post_id), None)
-
-    if post_to_update and comment_content:
-        new_comment = {
-            'author': comment_author,
-            'content': comment_content,
-            'timestamp': current_time
-        }
-        post_to_update['comments'].append(new_comment)
-        save_data() 
-        flash('Comment added successfully!', 'success')
-    else:
-        flash('Could not add comment.', 'error')
-        
-    return redirect(url_for('view_posts'))
-
-@app.route('/upload', methods=['POST'])
-@login_required # Protecting the upload route
-def upload_file():
-    
-    if 'file' not in request.files:
-        if 'files' not in request.files:
-             flash('No file part in the request.', 'error')
-             return redirect(request.url)
-    
-    file = request.files.get('file') or request.files.get('files')
-
-    if not file or file.filename == '':
-        flash('No selected file.', 'error')
-        return redirect(request.url)
-    
-    if file and allowed_file(file.filename):
-
-        timestamp = int(time.time())
-        extension = file.filename.rsplit('.', 1)[1].lower()
-        unique_filename = secure_filename(f"{timestamp}.{extension}")
-
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-        file.save(file_path)
-
-        image_url = url_for('static', filename=f'uploads/{unique_filename}')
-
-        try:
-            with open(DATA_FILE, 'r') as f:
-                data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            data = []
+        for doc in query_results:
+            post = doc.to_dict()
+            post['id'] = doc.id
+            post['created_at_dt'] = datetime.fromtimestamp(post.get('created_at', 0))
+            posts.append(post)
             
-        current_user = get_current_user_info()
-
-        new_post = {
-            'id': len(blog_posts) + 1, 
-            'title': "Uploaded Image",
-            'author': current_user.get('name', "Authenticated User"),
-            'content': "Image uploaded via the file upload endpoint.",
-            'timestamp': datetime.datetime.now().strftime("%Y-%m-%d at %H:%M:%S"),
-            'likes': 0,
-            'comments': [],
-            'image_url': image_url
-        }
-
-        data.append(new_post)
-
-        with open(DATA_FILE, 'w') as f:
-            json.dump(data, f, indent=4)
+        # Sort posts by timestamp in descending order (latest first)
+        posts.sort(key=lambda p: p['created_at'], reverse=True)
         
-        flash('File uploaded and saved as a post!', 'success')
-        return redirect(url_for('index', success=True))
-    
-    flash('File upload failed or file type not allowed.', 'error')
-    return redirect(request.url)
-    
+        # Limit to top 3 posts for the homepage
+        top_posts = posts[:3]
+            
+    except Exception as e:
+        flash('Error fetching blog posts for homepage.', 'danger')
+        print(f"Error fetching index posts: {e}")
+        top_posts = []
 
-@app.route('/posts')
-def view_posts():
-    liked_posts = session.get('liked_posts', [])
-    sorted_posts = sorted(blog_posts, key=lambda x: datetime.datetime.strptime(x['timestamp'], "%Y-%m-%d at %H:%M:%S"), reverse=True)
-    
-    return render_template('posts.html', posts=sorted_posts, liked_posts=liked_posts)
+    return render_template('homepage.html', posts=top_posts)
 
 
 @app.route('/about')
@@ -335,43 +237,168 @@ def about():
 def contact():
     return render_template('contact.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if is_logged_in():
-        flash("You are already logged in.", "info")
+# --- Post Viewing (All Posts) ---
+@app.route('/view_posts')
+def view_posts():
+    # --- FETCH ALL POSTS ---
+    if not db:
+        flash('Cannot retrieve posts: Database connection failed.', 'danger')
+        return render_template('posts.html', posts=[]) # Updated to posts.html
+        
+    posts = []
+    try:
+        posts_ref = db.collection(POST_COLLECTION)
+        query_results = posts_ref.get()
+        
+        for doc in query_results:
+            post = doc.to_dict()
+            post['id'] = doc.id
+            post['created_at_dt'] = datetime.fromtimestamp(post.get('created_at', 0))
+            posts.append(post)
+            
+        # Sort posts by timestamp in descending order (latest first)
+        posts.sort(key=lambda p: p['created_at'], reverse=True)
+            
+    except Exception as e:
+        flash('Error fetching blog posts.', 'danger')
+        print(f"Error fetching posts: {e}")
+
+    return render_template('posts.html', posts=posts) # Updated to posts.html
+
+# --- Post Creation (Same) ---
+@app.route('/create_post', methods=['GET', 'POST'])
+@login_required 
+def create_post():
+    if not current_user.is_admin():
+        flash('You must be an administrator to create a post.', 'danger')
         return redirect(url_for('view_posts'))
+        
+    if request.method == 'POST':
+        if not db:
+            flash('Database connection is not available. Cannot create post.', 'danger')
+            return render_template('create_post.html')
+
+        title = request.form.get('title')
+        content = request.form.get('content')
+        
+        if not title or not content:
+            flash('Title and content are required.', 'danger')
+            return render_template('create_post.html', title=title, content=content)
+
+        try:
+            post_data = {
+                'title': title,
+                'content': content,
+                'author_id': current_user.id,
+                'author_username': current_user.username,
+                # New posts start with 0 likes and no comments
+                'likes_count': 0, 
+                'comments': [],
+                'created_at': time.time(),
+                'updated_at': time.time()
+            }
+            
+            db.collection(POST_COLLECTION).add(post_data)
+            
+            flash('Post created successfully!', 'success')
+            return redirect(url_for('view_posts'))
+
+        except Exception as e:
+            flash('An error occurred while saving the post.', 'danger')
+            print(f"Firestore Post Creation Error: {e}")
+            return render_template('create_post.html', title=title, content=content)
+
+    return render_template('create_post.html')
+
+# --- User Authentication (Same) ---
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if current_user.is_authenticated:
+        flash('You are already signed up and logged in!', 'info')
+        return redirect(url_for('index'))
 
     if request.method == 'POST':
-        # Traditional login handler (kept for compatibility)
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        if not db:
+            flash('Database connection is not available. Please check server logs.', 'danger')
+            return render_template('signup.html')
+
+        try:
+            if db.collection(USER_COLLECTION).where('username', '==', username).limit(1).get():
+                flash('Username already taken. Please choose another.', 'danger')
+                return render_template('signup.html')
+
+            password_hash = generate_password_hash(password)
+
+            user_data = {
+                'username': username,
+                'email': email,
+                'password_hash': password_hash,
+                'role': 'standard',
+                'created_at': time.time()
+            }
+            
+            new_user_ref = db.collection(USER_COLLECTION).add(user_data)
+            user_doc_id = new_user_ref[1].id
+
+            new_user = User(user_id=user_doc_id, username=username, email=email, role='standard')
+            login_user(new_user)
+
+            flash(f'Account created successfully! Welcome, {username}.', 'success')
+            return redirect(url_for('index'))
+
+        except Exception as e:
+            flash('An error occurred during sign up. Please try again.', 'danger')
+            print(f"Firestore Sign Up Error: {e}")
+            return render_template('signup.html')
+
+    return render_template('signup.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        flash('You are already logged in!', 'info')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
-        if username == 'admin' and password == 'password':
-            session['logged_in'] = True
-            session['username'] = username # Store username for the traditional user
-            flash('Logged in successfully (Traditional)!', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid credentials. Please try again.', 'error')
-    
-    # The login.html template should contain the "Sign in with Google" link
+
+        if not db:
+            flash('Database connection is not available. Cannot log in.', 'danger')
+            return render_template('login.html')
+
+        try:
+            user, password_hash = User.get_by_username(username)
+            
+            if user and check_password_hash(password_hash, password):
+                login_user(user)
+                flash(f'Welcome back, {username}!', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash('Invalid username or password.', 'danger')
+
+        except Exception as e:
+            print(f"Firestore Login Error: {e}")
+            flash('An error occurred during login. Please try again.', 'danger')
+
     return render_template('login.html')
 
-@app.route("/logout")
+
+@app.route('/logout')
+@login_required
 def logout():
-    # Clear traditional login session keys
-    session.pop('logged_in', None)
-    session.pop('username', None)
+    logout_user()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('index'))
 
-    # Clear Google OAuth session keys
-    session.pop('google_user_email', None)
-    session.pop('google_user_name', None)
-    session.pop('google_oauth_token', None) # Clears the Flask-Dance token cache
-
-    flash("You have been successfully logged out.", "success")
-    return redirect(url_for("index"))
-
+# --- Error Handlers (Same) ---
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 if __name__ == '__main__':
-    os.makedirs(Upload_folder, exist_ok=True)
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

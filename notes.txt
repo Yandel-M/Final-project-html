@@ -20,3 +20,12 @@ won't accept localhost as app domain will figure out a solution
 or move on to a different part of the website in order to
 keep progress moving a long smoothly
 
+
+11/29 I removed Oauth for now as I've spent to long in making it
+work, I instead chose to focus on the data base and user specific
+website
+
+https://console.firebase.google.com/?pli=1 this is firestore website
+the data base we're using for the website.
+
+http://localhost:8080
