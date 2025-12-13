@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Homepage</title>
-    <script src="script.js" defer></script>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
     </head>
-<body>
+<body style="margin: 0; padding-top: 80px; background-color: black; color: white;">
     <Header>
         <div class="Logo">
             <a href ="{{ url_for('index') }}">
@@ -27,9 +27,8 @@
             <ul class="nav-links">
                 <li><a href="{{ url_for('about') }}">[About]</a></li>
                 <li><a href="{{ url_for('contact') }}">[Contact]</a></li>
-                <li><a href="{{ url_for('posts') }}">[View Posts]</a></li>
+                <li><a href="{{ url_for('view_posts') }}">[View Posts]</a></li>
                 <li><a href="{{ url_for('create_post') }}">[Create a Post]</a></li>
-                <li><a href="{{ url_for('login') }}">[login]</a></li>
             </ul>
         </nav>
     </Header>
@@ -39,7 +38,7 @@
             <h2>Welcome! Check out our latest Posts!</h2>
 
             <div class="latest-posts-grid">
-            {% for post in latest_posts %}
+            {% for post in posts %}
             <a href="{{ url_for('view_posts') }}" class="post-card">
                 <h3 class="card-title">{{ post.title }}</h3>
                 <p class="card-meta">By {{ post.author }} on {{ post.timestamp }}</p>

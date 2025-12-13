@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
 </head>
-<body>
+<body style="margin: 0; background-color: black; color: white;">
     <Header>
         <div class="Logo">
             <a href ="{{ url_for('index') }}">
@@ -34,7 +34,8 @@
     <main> 
 
         <section class="posts-header">
-            <h2>All Blog Posts</h2>
+            <h2> </h2>
+
             <p>Explore the latest posts shared by our community members below. Feel free to like and comment on the posts that resonate with you!</p>
         <section class="posts-section container">
         
@@ -54,19 +55,10 @@
                 
                 <div class="interaction-bar">
                     
-                    <form method="POST" action="{{ url_for('like_post', post_id=post.id) }}" class="like-form">
-                        {% set is_liked = post.id in session.get('liked_posts', []) %}
-                        <button type="submit" class="like-button">
-                            <span class="heart-icon {{ 'liked' if is_liked else '' }}">
-                                {% if is_liked %}
-                                    &#x2764; 
-                                {% else %}
-                                    &#x2661; 
-                                {% endif %}
-                            </span>
-                        </button>
+                    <span class="like-display">
+                        <span class="heart-icon">&#x2661;</span>
                         <span>{{ post.likes }} Likes</span>
-                    </form>
+                    </span>
 
               
                     <button class="comment-button" onclick="toggleComments('{{ post.id }}')">
